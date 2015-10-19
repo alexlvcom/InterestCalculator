@@ -3,7 +3,7 @@
 namespace InterestCalculator;
 
 require __DIR__.'/../vendor/autoload.php';
-require __DIR__.'/../config.sample.php';
+require __DIR__.'/../config.php';
 
 $messageHandler = new MessageHandler();
 $messageHandler->connect(RABBIT_MQ_SERVER_HOST, RABBIT_MQ_SERVER_USER, RABBIT_MQ_SERVER_PASSWORD);

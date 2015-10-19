@@ -33,7 +33,7 @@
 Incoming messages look like `{ "sum": 123, "days": 5 }`   
 Outgoing messages look like `{ "sum": 123, "days": 5, "interest": 18.45, "totalSum": 141.45, "token": "myIdentifier" }`
  
- #### Dependencies:
+#### Dependencies:
  - PHP >= 5.5
  - [php-amqplib](https://github.com/videlalvaro/php-amqplib)
  
@@ -41,4 +41,5 @@ Outgoing messages look like `{ "sum": 123, "days": 5, "interest": 18.45, "totalS
  - `composer install`
 
 #### Usage
+  - `mv config.sample.php config.php` (update credentials)
   - `php src/interest.php`
