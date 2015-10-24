@@ -2,24 +2,23 @@
 
 namespace InterestCalculator;
 
-use PhpAmqpLib\Connection\AMQPStreamConnection;
-use PhpAmqpLib\Message\AMQPMessage;
 use \Exception;
+use League\CLImate\CLImate;
 
 /**
- * Receives messages from  Rabbit MQ Server, handles them and sends result back.
+ * Receives messages from Rabbit MQ Server, handles them and sends result back.
  *
  * @package InterestCalculator
  */
 class MessageHandler
 {
     /**
-     * @var Rabbit MQ connection
+     * @var \PhpAmqpLib\Connection\AMQPStreamConnection Rabbit MQ connection
      */
     private $connection;
 
     /**
-     * @var Rabbit MQ channel
+     * @var \PhpAmqpLib\Channel\AMQPChannel Rabbit MQ channel
      */
     private $channel;
 
@@ -34,9 +33,24 @@ class MessageHandler
     private $broadcastQueue;
 
     /**
-     * @var \InterestCalculator\InterestCalculator
+     * @var Identifier for messages
      */
-    private $interestCaculator;
+    private $token;
+
+    /**
+     * @var \InterestCalculator\ICalculator
+     */
+    private $interestCalculator;
+
+    /**
+     * @var \InterestCalculator\IAMQPFactory
+     */
+    private $amqpFactory;
+
+    /**
+     * @var \League\CLImate\CLImate
+     */
+    private $climate;
 
     /**
      * Connects to the Rabbit MQ Server
@@ -48,7 +62,7 @@ class MessageHandler
      */
     public function connect($server, $user, $password, $port = 5672)
     {
-        $this->connection = new AMQPStreamConnection($server, $port, $user, $password);
+        $this->connection = $this->amqpFactory->buildConnection($server, $port, $user, $password);
         $this->channel    = $this->connection->channel();
     }
 
@@ -57,7 +71,27 @@ class MessageHandler
      */
     public function handle()
     {
-        $this->channel->basic_consume($this->listenQueue, '', false, true, false, false, [$this, 'send']);
+
+        $this->channel->basic_consume($this->listenQueue, '', false, true, false, false, function ($msg) {
+            $this->climate->br();
+            $this->climate->info('Received: '.$msg->body);
+            $input = json_decode($msg->body, true);
+
+            try {
+                $output          = $this->interestCalculator->caculateInterest($input);
+                $output['token'] = $this->token;
+                $output          = json_encode($output);
+                $this->climate->out('Sending back: '.$output);
+
+                $this->channel->basic_publish($this->amqpFactory->buildMessage($output), '', $this->broadcastQueue);
+            } catch (Exception $e) {
+                $this->climate->error('Unable to handle the message: '.$e->getMessage());
+                return false;
+            }
+
+            return true;
+        });
+
 
         while (count($this->channel->callbacks)) {
             $this->channel->wait();
@@ -67,38 +101,24 @@ class MessageHandler
         $this->connection->close();
     }
 
-
     /**
-     * Callback for received Rabbit MQ Messages. Handles the message and broadcasts the result.
-     * @param $msg
+     * @param IAMQPFactory $amqpFactory
      */
-    public function send($msg)
+    public function setAmqpFactory(IAMQPFactory $amqpFactory)
     {
-        echo "Received ", $msg->body, "\n";
-
-        $input = json_decode($msg->body, true);
-
-        try {
-            $output = $this->interestCaculator->caculateInterest($input);
-            $output = json_encode($output);
-            echo "Sending back ", $output, "\n";
-
-            $this->channel->basic_publish(new AMQPMessage($output), '', $this->broadcastQueue);
-        } catch (Exception $e) {
-            echo "Unable to handle the message: ", $e->getMessage(), "\n";
-        }
+        $this->amqpFactory = $amqpFactory;
     }
 
     /**
-     * @param \InterestCalculator\InterestCalculator $interestCaculator
+     * @param \InterestCalculator\ICalculator $interestCalculator
      */
-    public function setInterestCaculator(InterestCalculator $interestCaculator)
+    public function setInterestCalculator(ICalculator $interestCalculator)
     {
-        $this->interestCaculator = $interestCaculator;
+        $this->interestCalculator = $interestCalculator;
     }
 
     /**
-     * @param Rabbit $listenQueue
+     * @param string $listenQueue
      */
     public function setListenQueue($listenQueue)
     {
@@ -106,10 +126,26 @@ class MessageHandler
     }
 
     /**
-     * @param Rabbit $broadcastQueue
+     * @param string $broadcastQueue
      */
     public function setBroadcastQueue($broadcastQueue)
     {
         $this->broadcastQueue = $broadcastQueue;
+    }
+
+    /**
+     * @param string $token
+     */
+    public function setToken($token)
+    {
+        $this->token = $token;
+    }
+
+    /**
+     * @param CLImate $climate
+     */
+    public function setClimate($climate)
+    {
+        $this->climate = $climate;
     }
 }

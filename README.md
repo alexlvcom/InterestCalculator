@@ -42,4 +42,4 @@ Outgoing messages look like `{ "sum": 123, "days": 5, "interest": 18.45, "totalS
 
 #### Usage
   - `mv config.sample.php config.php` (update credentials)
-  - `php src/interest.php`
+  - `php app/app.php`
