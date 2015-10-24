@@ -66,6 +66,7 @@ class ServiceContainerTest extends \PHPUnit_Framework_TestCase
             [$input = ['days' => 238934205, 'sum' => 169], array_merge($input, ['interest' => 1157556578.49, 'totalSum' => 1157556747.49])],
             [$input = ['days' => 114149722, 'sum' => 681], array_merge($input, ['interest' => 2228430872.43, 'totalSum' => 2228431553.43])],
             [$input = ['days' => 285668047, 'sum' => 217], array_merge($input, ['interest' => 1777045697.56, 'totalSum' => 1777045914.56])],
+            [$input = ['days' => 26679989, 'sum' => 480], array_merge($input, ['interest' => 367116648, 'totalSum' => 367117128])],
         ];
     }
 
@@ -74,6 +75,8 @@ class ServiceContainerTest extends \PHPUnit_Framework_TestCase
         return [
             [['sum' => 123], 'Days is not set.'],
             [['days' => 5], 'Sum is not set.'],
+            [['days' => -10, 'sum' => 56], 'Days is not set.'],
+            [['days' => 6, 'sum' => null], 'Sum is not set.'],
         ];
     }
 }

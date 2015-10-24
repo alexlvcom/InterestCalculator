@@ -8,11 +8,11 @@ class Calculator implements ICalculator
 {
     public function caculateInterest(array $input)
     {
-        if (!array_key_exists('days', $input)) {
+        if (!array_key_exists('days', $input) || (int)$input['days'] < 1) {
             throw new InvalidArgumentException('Days is not set.');
         }
 
-        if (!array_key_exists('sum', $input)) {
+        if (!array_key_exists('sum', $input) || (int)$input['sum'] < 1) {
             throw new InvalidArgumentException('Sum is not set.');
         }
 
@@ -48,10 +48,10 @@ class Calculator implements ICalculator
         }
 
         $totalSum = bcadd($sum, $totalInterest);
-
+        
         return array_merge($input, [
-            'interest' => $totalInterest,
-            'totalSum' => $totalSum,
+            'interest' => (float)$totalInterest,
+            'totalSum' => (float)$totalSum,
         ]);
 
     }
